@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Chat Room</title>
+    <style>
+        :root {
+            --primary-color: #4285f4;
+            --secondary-color: #34a853;
+            --danger-color: #ea4335;
+            --light-gray: #f1f3f4;
+            --dark-gray: #5f6368;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #202124;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            margin: 0;
+        }
+        
+        #room-info {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        #chat-container {
+            display: flex;
+            gap: 20px;
+        }
+        
+        #chat-window {
+            flex: 3;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        #users-panel {
+            flex: 1;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            padding: 15px;
+        }
+        
+        #messages {
+            height: 500px;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        
+        #message-form {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid #e0e0e0;
+            background-color: var(--light-gray);
+        }
+        
+        #message-input {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 24px;
+            font-size: 16px;
+            outline: none;
+        }
+        
+        #message-input:focus {
+            border-color: var(--primary-color);
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 24px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        #send-button {
+            background-color: var(--primary-color);
+            color: white;
+            margin-left: 10px;
+        }
+        
+        #send-button:hover {
+            background-color: #3367d6;
+        }
+        
+        #invite-button {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        #invite-button:hover {
+            background-color: #2d924a;
+        }
+        
+        #clear-chat {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        #clear-chat:hover {
+            background-color: #d33426;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 18px;
+            max-width: 70%;
+            word-wrap: break-word;
+            position: relative;
+        }
+        
+        .received {
+            background-color: #e9e9eb;
+            border-bottom-left-radius: 4px;
+            margin-right: auto;
+        }
+        
+        .sent {
+            background-color: var(--primary-color);
+            color: white;
+            border-bottom-right-radius: 4px;
+            margin-left: auto;
+            text-align: right;
+        }
+        
+        .message-info {
+            font-size: 12px;
+            margin-top: 5px;
+            opacity: 0.8;
+        }
+        
+        .received .message-info {
+            color: var(--dark-gray);
+        }
+        
+        .sent .message-info {
+            color: rgba(255,255,255,0.8);
+        }
+        
+        #users-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        
+        .user-item {
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            background-color: var(--light-gray);
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .online {
+            background-color: var(--secondary-color);
+        }
+        
+        .offline {
+            background-color: var(--dark-gray);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+        }
+        
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .timestamp {
+            font-size: 11px;
+            margin-left: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            #chat-container {
+                flex-direction: column;
+            }
+            
+            #messages {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Chat Room</h1>
+        <div>
+            <button id="invite-button">Invite Friends</button>
+            <button id="clear-chat">Clear Chat</button>
+        </div>
+    </header>
+    
+    <div id="room-info">
+        <p>Room ID: <strong id="room-id-display"></strong></p>
+        <p>Share this link to invite others to the chat:</p>
+        <input type="text" id="invite-link" readonly style="width: 100%; padding: 8px; margin-bottom: 10px;">
+    </div>
+    
+    <div id="chat-container">
+        <div id="chat-window">
+            <div id="messages"></div>
+            <form id="message-form">
+                <input type="text" id="message-input" placeholder="Type your message..." autocomplete="off" required>
+                <button type="submit" id="send-button">Send</button>
+            </form>
+        </div>
+        
+        <div id="users-panel">
+            <h3>Online Users (<span id="user-count">1</span>)</h3>
+            <ul id="users-list">
+                <li class="user-item">
+                    <span class="user-status online"></span>
+                    <span>You</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <div id="invite-modal" class="modal">
+        <div class="modal-content">
+            <h2>Invite Friends</h2>
+            <p>Share this link with friends to join your chat room:</p>
+            <input type="text" id="modal-invite-link" readonly style="width: 100%; padding: 10px; margin: 10px 0;">
+            <div class="modal-actions">
+                <button id="copy-invite-link">Copy Link</button>
+                <button id="close-invite-modal">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="clear-modal" class="modal">
+        <div class="modal-content">
+            <h2>Clear Chat</h2>
+            <p>Are you sure you want to clear all messages in this chat?</p>
+            <div class="modal-actions">
+                <button id="confirm-clear">Clear</button>
+                <button id="cancel-clear">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // User information
+        const userId = 'user-' + Math.random().toString(36).substring(2, 9);
+        let username = localStorage.getItem('chatUsername') || 'User-' + Math.random().toString(36).substring(2, 5);
+        
+        // Room information
+        let roomId = window.location.hash.substring(1);
+        if (!roomId) {
+            roomId = Math.random().toString(36).substring(2, 10);
+            window.location.hash = roomId;
+        }
+        document.getElementById('room-id-display').textContent = roomId;
+        
+        // DOM elements
+        const messageForm = document.getElementById('message-form');
+        const messageInput = document.getElementById('message-input');
+        const messagesContainer = document.getElementById('messages');
+        const inviteLinkInput = document.getElementById('invite-link');
+        const modalInviteLink = document.getElementById('modal-invite-link');
+        const usersList = document.getElementById('users-list');
+        const userCountElement = document.getElementById('user-count');
+        
+        // Set invite links
+        const inviteLink = window.location.href;
+        inviteLinkInput.value = inviteLink;
+        modalInviteLink.value = inviteLink;
+        
+        // Modal elements
+        const inviteModal = document.getElementById('invite-modal');
+        const clearModal = document.getElementById('clear-modal');
+        const inviteButton = document.getElementById('invite-button');
+        const copyInviteButton = document.getElementById('copy-invite-link');
+        const closeInviteModal = document.getElementById('close-invite-modal');
+        const clearChatButton = document.getElementById('clear-chat');
+        const confirmClearButton = document.getElementById('confirm-clear');
+        const cancelClearButton = document.getElementById('cancel-clear');
+        
+        // Event listeners
+        inviteButton.addEventListener('click', () => inviteModal.style.display = 'flex');
+        copyInviteButton.addEventListener('click', copyInviteLink);
+        closeInviteModal.addEventListener('click', () => inviteModal.style.display = 'none');
+        clearChatButton.addEventListener('click', () => clearModal.style.display = 'flex');
+        confirmClearButton.addEventListener('click', clearMessages);
+        cancelClearButton.addEventListener('click', () => clearModal.style.display = 'none');
+        
+        // Close modals when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === inviteModal) inviteModal.style.display = 'none';
+            if (e.target === clearModal) clearModal.style.display = 'none';
+        });
+        
+        // Message form submission
+        messageForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const message = messageInput.value.trim();
+            if (message === '') return;
+            
+            sendMessage(message);
+            messageInput.value = '';
+            messageInput.focus();
+        });
+        
+        // Allow sending message with Shift+Enter for new line, Enter to send
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                messageForm.dispatchEvent(new Event('submit'));
+            }
+        });
+        
+        // Function to copy invite link
+        function copyInviteLink() {
+            modalInviteLink.select();
+            document.execCommand('copy');
+            
+            // Show feedback
+            const originalText = copyInviteButton.textContent;
+            copyInviteButton.textContent = 'Copied!';
+            setTimeout(() => {
+                copyInviteButton.textContent = originalText;
+            }, 2000);
+        }
+        
+        // Function to send message
+        function sendMessage(message) {
+            const timestamp = new Date();
+            displayMessage(username, message, true, timestamp);
+            
+            // In a real app, you would send this to a server here
+            // For demo, we'll simulate receiving our own message
+            setTimeout(() => {
+                displayMessage(username, message, false, timestamp);
+            }, 300);
+        }
+        
+        // Function to display message
+        function displayMessage(sender, message, isSent, timestamp) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', isSent ? 'sent' : 'received');
+            
+            const timeString = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            messageElement.innerHTML = `
+                <div>${message}</div>
+                <div class="message-info">
+                    ${sender} <span class="timestamp">${timeString}</span>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageElement);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        // Function to clear messages
+        function clearMessages() {
+            messagesContainer.innerHTML = '';
+            clearModal.style.display = 'none';
+        }
+        
+        // Function to add user to list
+        function addUser(userId, name, isOnline) {
+            const userItem = document.createElement('li');
+            userItem.className = 'user-item';
+            userItem.innerHTML = `
+                <span class="user-status ${isOnline ? 'online' : 'offline'}"></span>
+                <span>${name}</span>
+            `;
+            userItem.dataset.userId = userId;
+            usersList.appendChild(userItem);
+            updateUserCount();
+        }
+        
+        // Function to update user count
+        function updateUserCount() {
+            const count = usersList.children.length;
+            userCountElement.textContent = count;
+        }
+        
+        // Simulate other users joining (for demo purposes)
+        setTimeout(() => {
+            addUser('user-123', 'Friend 1', true);
+            addUser('user-456', 'Friend 2', true);
+            
+            // Simulate receiving messages from others
+            setTimeout(() => {
+                displayMessage('Friend 1', 'Hello everyone!', false, new Date());
+            }, 1000);
+            
+            setTimeout(() => {
+                displayMessage('Friend 2', 'How are you all doing?', false, new Date());
+            }, 2500);
+        }, 2000);
+        
+        // Focus input on load
+        messageInput.focus();
+    </script>
+</body>
+</html>
